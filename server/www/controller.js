@@ -10,8 +10,8 @@ window.onload = function(){
 	function setup() {
         accelerometer = new Accelerometer();
         accelerometer.startListening(); 
-        socket = io.connect('http://128.237.225.185:3000/');  
-        var emitID = setInterval(repeat, 100);
+        socket = io.connect('http://128.237.254.163:3000/');  
+        var emitID = setInterval(repeat, 20);
     }
 
 

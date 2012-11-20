@@ -57,7 +57,7 @@ app.post('/login',
 //registering new users would be done by adding to these data structures
 var idToUser = [
     { id: 0, username: 'bob', password: 'bobby', email: 'bob@example.com' },
-    { id: 1, username: 'tom', password: 'tommy', email: 'bob@example.com' }
+    { id: 1, username: 'tom', password: 'tommy', email: 'tom@example.com' }
 ];
 var usernameToId = {'bob': 0, 'tom': 1};
 
