@@ -10,7 +10,7 @@ window.onload = function(){
 	function setup() {
         accelerometer = new Accelerometer();
         accelerometer.startListening(); 
-        socket = io.connect('http://128.237.254.163:3000/');  
+        socket = io.connect('http://128.237.133.187:3000/');  
         var emitID = setInterval(repeat, 20);
     }
 
@@ -39,6 +39,7 @@ window.onload = function(){
     if (hasSessionCookie())
 	{	
 		document.getElementById('login').style.display = 'none';
+        document.getElementById('pageHeadText').innerHTML = 'Logged in successfully.';
     	setup();
 	}
 }

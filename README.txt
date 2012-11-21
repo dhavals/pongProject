@@ -1,3 +1,10 @@
+GROUP MEMBERS:
+Nidhi Doshi (npdoshi)
+Anish Phophaliya (aphophal)
+Dhaval Shah (dhavals)
+
+
+
 Some instructions that might help you test this homework:
 
 There are two players with the following hardcoded usernames and passwords:

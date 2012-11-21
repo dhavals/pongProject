@@ -1,8 +1,6 @@
 window.onload = function(){
-	// Make a connection to the socket.io server
-	// This also fires the "connection" event, but it doesn't matter
 	
-	var socket = io.connect('http://128.237.254.163:3000/');
+	var socket = io.connect('http://128.237.133.187:3000/');
 	var clientUserId;
 
 	// When getting a "receive" event from the server
@@ -26,85 +24,160 @@ window.onload = function(){
 	var canvasWidth = canvas.width;
 	var canvasHeight = canvas.height;
 
-	var intervalId;
 	var timerDelay = 10;
 
-	function Player()
-	{
+	var Paddle = function(config){
+	    this.style = config.style || 'blue';
+	    this.radius = config.radius;
+
+	    this.x = config.x;
+	    this.y = config.y;
+	    
+	    this.velx = config.velx;
+	    this.vely = config.vely;
+
+	   	this.height = config.height;
+	    this.width = config.width;
+
+	    this.maxX = config.maxX;
+	    this.maxY = config.maxY;
+
 	    this.score = 0;
+
 	}
 
-	/*
-
-	Note: Since we made Pong for our hw1, we used a fair amount of that code
-	
-	*/
-	
-	function MovingCircle(cx, cy, xSpeed, ySpeed, radius)
-	{
-		this.cx = cx;
-		this.cy = cy;
-		this.xSpeed = xSpeed;
-		this.ySpeed = ySpeed;
-		this.radius = radius;   
+	Paddle.prototype.draw = function(){
+    	roundedRect(ctx, this.x, this.y, this.width, this.height, this.radius, this.style);
 	}
 
-	function Ball(cx, cy, xSpeed, ySpeed, radius, color)
-	{
-		MovingCircle.call(this, cx, cy, xSpeed, ySpeed, radius);
-		this.color = color;
-	}
-	Ball.prototype = new MovingCircle();
-	Ball.prototype.constructor = Ball;
 
-	function BallBounds(edgeUp, edgeDown, edgeLeft, edgeRight)
-	{
-	    this.edgeUp = edgeUp;
-	    this.edgeDown = edgeDown;
-	    this.edgeLeft = edgeLeft;
-	     this.edgeRight = edgeRight;
-	}
+	Paddle.prototype.update = function(){
+	    this.x += this.velx;
+	    this.y += this.vely;
 
-	function Paddle(cx, cy, width, height, radius, name)
-	{
-		this.cx = cx;
-		this.cy = cy;
-		this.paddleWidth = width;
-		this.paddleHeight = height;
-		this.radius = radius;
-		this.name = name;
+	    if (this.x < 0){
+	        this.x = 0;
+	        this.velx = -this.velx;
+	    }
+	    else if(this.x + this.width > this.maxX){
+	        this.x = this.maxX - this.width;
+	        this.velx = -this.velx;
+	    }
+	    if (this.y < 0){
+	        this.y = 0;
+	        this.vely = -this.vely;
+	    }
+	    else if (this.y + this.height > this.maxY){
+	        this.y = this.maxY - this.height;
+	        this.vely = -this.vely;
+	    }
 	}
 
-	var initBallX = 200;
-	var initBallY = 200;
-	var initBallXSpeed = 2;
-	var initBallYSpeed = 2;
-	var initBallRadius = 7;
 
-	var initPaddleWidth = 10;
-	var initPaddleHeight = 60;
-	var initPaddleRadius = 5;
+	var Ball = function(config){
+	    this.style = config.style || 'blue';
+	    this.radius = config.radius;
 
-	var initPaddle1X = 25;
-	var initPaddle1Y = (canvasHeight/2) - 50;
-	var initPaddle2X = canvasWidth - 30 - 5;
-	var initPaddle2Y = (canvasHeight/2) - 50;
+	    this.x = config.x;
+	    this.y = config.y;
+	    
+	    this.velx = config.velx;
+	    this.vely = config.vely;
 
-	var ball = new Ball(initBallX, initBallY, initBallXSpeed, initBallYSpeed, initBallRadius, 'green');
-	var ballBounds = new BallBounds(0, canvasHeight, 0, canvasWidth);
+	    this.maxX = config.maxX;
+	    this.maxY = config.maxY;
 
-	var paddle1 = new Paddle(initPaddle1X, initPaddle1Y, initPaddleWidth, initPaddleHeight, initPaddleRadius, "one");
-	var paddle2 = new Paddle(initPaddle2X, initPaddle2Y, initPaddleWidth, initPaddleHeight, initPaddleRadius, "two");
+	}
 
-	var player1 = new Player();
-	var player2 = new Player();
 
-	function redrawAll(ball)
+
+	Ball.prototype.draw = function(){
+    	drawCircle(ctx, this.x, this.y, this.radius, this.style);
+	}
+
+
+	Ball.prototype.update = function(paddle1, paddle2){
+	    this.x += this.velx;
+	    this.y += this.vely;
+
+	    if (this.x - this.radius < 0){
+	        this.x = canvas.width/2;
+	        this.velx = -this.velx;
+	        paddle2.score ++;
+	    }
+	    else if(this.x + this.radius > this.maxX){
+	        this.x = canvas.width/2;
+	        this.velx = -this.velx;
+	        paddle1.score ++;
+	    }
+	    if (this.y - this.radius < 0){
+	        this.y = this.radius;
+	        this.vely = -this.vely;
+	    }
+	    else if (this.y + this.radius > this.maxY){
+	        this.y = this.maxY - this.radius;
+	        this.vely = -this.vely;
+	    }
+	}
+
+
+
+	Ball.prototype.bouncePaddle = function(paddle1, paddle2){
+
+
+	    if(((ball.x - ball.radius) < (paddle1.x + paddle1.width)) && ((ball.x - ball.radius) > paddle1.x)){
+	        if ((ball.y - ball.radius) <= (paddle1.y + paddle1.height) && (ball.y + ball.radius) >= paddle1.y){
+	            ball.x = paddle1.x + paddle1.width + ball.radius;
+	            ball.vely = -ball.vely;
+	            ball.velx = -ball.velx;
+	        }
+	    }
+
+	    if((ball.x + ball.radius) > paddle2.x && (ball.x + ball.radius) < (paddle2.x + paddle2.width)){
+	        if ((ball.y - ball.radius) <= (paddle2.y + paddle2.height) && (ball.y + ball.radius) >= paddle2.y){
+	            ball.x = paddle2.x - ball.radius;
+	            ball.vely = -ball.vely;
+	            ball.velx = -ball.velx;
+	        }
+	    }
+	}
+
+
+	var ball = new Ball({'x': canvas.width/2, 'y': canvas.height/2,
+                            'radius': 20,
+                            'maxX': canvas.width, 'maxY': canvas.height, 'velx':5, 'vely':5});
+
+	var paddle1 = new Paddle({'x': 25, 'y': canvas.height/2,
+                            'radius': 20,
+                            'maxX': canvas.width, 'maxY': canvas.height, 'velx':0, 'vely':0, 'height':120, 'width': 40});
+
+
+
+	var paddle2 = new Paddle({'x': canvas.width - 65, 'y': canvas.height/2,
+                            'radius': 20,
+                            'maxX': canvas.width, 'maxY': canvas.height, 'velx':0, 'vely':0, 'height':120, 'width': 40});
+
+
+
+
+
+
+
+
+	function redrawAll()
 	{
 		ctx.clearRect(0, 0, 800, 400);
-		redrawBall(ball);
-		redrawPaddles();
+		
 		redrawScore();
+		ball.draw();
+		ball.update(paddle1, paddle2);
+		ball.bouncePaddle(paddle1, paddle2);
+		
+		paddle1.draw();
+		paddle1.update();
+		paddle2.draw();
+		paddle2.update();
+		setTimeout(redrawAll, timerDelay);
 	}
 
 	function drawCircle(ctx, cx, cy, radius, color) 
@@ -116,246 +189,59 @@ window.onload = function(){
 		ctx.fill();
 	}
 
-	function redrawBall(ball) 
-	{    
-		drawCircle(ctx, ball.cx, ball.cy, ball.radius, ball.color);
-	} 
-
-
-	function redrawPaddles()
+	function roundedRect(ctx, x, y, width, height, radius, color)
 	{
-		function roundedRect(ctx, x, y, width, height, radius, color)
-		{
-			ctx.beginPath();
-			ctx.moveTo(x,y+radius);
-			ctx.lineTo(x,y+height-radius);
-			ctx.quadraticCurveTo(x,y+height,x+radius,y+height);
-			ctx.lineTo(x+width-radius,y+height);
-			ctx.quadraticCurveTo(x+width,y+height,x+width,y+height-radius);
-			ctx.lineTo(x+width,y+radius);
-			ctx.quadraticCurveTo(x+width,y,x+width-radius,y);
-			ctx.lineTo(x+radius,y);
-			ctx.quadraticCurveTo(x,y,x,y+radius);
-			ctx.fillStyle = color;
-			ctx.fill();
-		}
-
-		roundedRect(ctx, paddle1.cx, paddle1.cy, paddle1.paddleWidth, paddle1.paddleHeight, paddle1.radius, "blue");
-		roundedRect(ctx, paddle2.cx, paddle2.cy, paddle2.paddleWidth, paddle2.paddleHeight, paddle2.radius, "red");
+		ctx.beginPath();
+		ctx.moveTo(x,y+radius);
+		ctx.lineTo(x,y+height-radius);
+		ctx.quadraticCurveTo(x,y+height,x+radius,y+height);
+		ctx.lineTo(x+width-radius,y+height);
+		ctx.quadraticCurveTo(x+width,y+height,x+width,y+height-radius);
+		ctx.lineTo(x+width,y+radius);
+		ctx.quadraticCurveTo(x+width,y,x+width-radius,y);
+		ctx.lineTo(x+radius,y);
+		ctx.quadraticCurveTo(x,y,x,y+radius);
+		ctx.fillStyle = color;
+		ctx.fill();
 	}
+
 
 	function redrawScore()
 	{
-		var player1score = "" + player1.score;
-		var player2score = "" + player2.score;
+		var paddle1score = "" + paddle1.score;
+		var paddle2score = "" + paddle2.score;
 
 		ctx.font = "30px Arial";
 		ctx.textAlign = "center";
 		ctx.fillStyle = "black";
-		ctx.fillText(player1score, canvasWidth/2 - 30, 50);
-		ctx.fillText(player2score, canvasWidth/2 + 30, 50);
+		ctx.fillText(paddle1score, canvasWidth/2 - 30, 50);
+		ctx.fillText(paddle2score, canvasWidth/2 + 30, 50);
 	}
 
 	function movePaddleUp(paddle, speed)
 	{
-		paddle.cy -= speed;
+		paddle.y -= speed;
 	}
 
 	function movePaddleDown(paddle, speed)
 	{
-		paddle.cy += speed;
+		paddle.y += speed;
 	}
 
 
-	function isScore(ball) // checks if the ball has left the board and places it back in the center
-	{
-		if (ball.cx + ball.radius >= ballBounds.edgeRight){
-			player1.score += 1;
-			console.log(" Player 1 scored!");
-			ball.cx = canvasWidth/2;
-			ball.cy = canvasHeight/2;
-			ball.xSpeed = -Math.floor((Math.random()) + 2);
-			ball.ySpeed = Math.floor((Math.random()) + 2)*Math.pow(-1, Math.round(Math.random())) ;
-			setTimeout(onTimer, timerDelay * 10);
-			return true;
-		}
 
-		if (ball.cx - ball.radius <= ballBounds.edgeLeft){
-			player2.score += 1;
-			console.log("Player 2 scored!");
-			ball.cx = canvasWidth/2;
-			ball.cy = canvasHeight/2;
-			ball.xSpeed = Math.floor((Math.random()) + 2);
-			ball.ySpeed = Math.floor((Math.random()) + 2)*Math.pow(-1, Math.round(Math.random()));
-			setTimeout(onTimer, timerDelay * 10);
-	        return true;
-	    }
-	    return false;
-	}
 
-	function onTimer() // called every timerDelay millis
-	{
-		if (Play() === "score")
-			return;
 
-		setTimeout(onTimer, timerDelay);
-	}
-
-	function Play()
-	{
-		if (isScore(ball) === true){
-			return "score";
-		}
-
-	   	// first find out the new coordinates of where to draw the ball
-	    setNextBallLocation(ball, paddle1, paddle2, BoundaryBouncePlay, PaddleBouncePlay);
-	    // updatePaddles();
-
-	    // then redraw it at that place
-	    redrawAll(ball);
-	    return "notScore";
-	}
 
 	function run() 
 	{
-	    // make canvas focusable, then give it focus!
 	    canvas.setAttribute('tabindex','0');
 	    canvas.focus();
 
-	    setTimeout(onTimer, timerDelay);
-	}
-
-	function setNextBallLocation(ball, paddle1, paddle2, boundaryBounceFn, paddleBounceFn)
-	{
-	    
-	    boundaryBounceFn(ball);
-
-	    paddleBounceFn(ball, paddle1, paddle2);
-
-	    ball.cx += ball.xSpeed;
-	    ball.cy += ball.ySpeed;
-
-	    // at this point, we may have exceeded the ball bounds. Thus, if we have, then meet the edge exactly.
-	    if (ball.cx + ball.radius >= ballBounds.edgeRight)
-	        ball.cx = ballBounds.edgeRight - ball.radius;
-
-	    if (ball.cx - ball.radius <= ballBounds.edgeLeft)
-	        ball.cx = ballBounds.edgeLeft + ball.radius;
-
-	    if (ball.cy + ball.radius >= ballBounds.edgeDown)
-	        ball.cy = ballBounds.edgeDown - ball.radius;
-
-	    if (ball.cy - ball.radius <= ballBounds.edgeUp)
-	        ball.cy = ballBounds.edgeUp + ball.radius;
-
-
-	    // at this point, if the ball is inside the paddle, make it touch the paddle edge exactly. 
-	    if(((ball.cx - ball.radius) < (paddle1.cx + paddle1.paddleWidth)) && ((ball.cx - ball.radius) > paddle1.cx)){
-	        if ((ball.cy - ball.radius) <= (paddle1.cy + paddle1.paddleHeight) && (ball.cy + ball.radius) >= paddle1.cy)
-	            ball.cx = paddle1.cx + paddle1.paddleWidth + ball.radius;
-	    }
-
-	    if((ball.cx + ball.radius) > paddle2.cx && (ball.cx + ball.radius) < (paddle2.cx + paddle2.paddleWidth)){
-	        if ((ball.cy - ball.radius) <= (paddle2.cy + paddle2.paddleHeight) && (ball.cy + ball.radius) >= paddle2.cy)
-	            ball.cx = paddle2.cx - ball.radius;
-	    }
-
+	    setTimeout(redrawAll, timerDelay);
 	}
 
 
-	function BoundaryBouncePlay(ball)
-	{
-	    if (ball.cy + ball.radius >= ballBounds.edgeDown || ball.cy - ball.radius <= ballBounds.edgeUp)
-	        ball.ySpeed = -ball.ySpeed;    
-	}
-
-	function PaddleBouncePlay(ball, paddle1, paddle2)
-	{
-	    if (touchingTop(ball) || touchingBottom(ball))
-	        bounceEdge(ball);
-	    if (touchingCenter(ball))
-	        bounceCenter(ball);
-	    if (touchingMiddleDown(ball) || touchingMiddleUp(ball))
-	        bounceMiddle(ball);
-	}
-
-
-	function touchingTop(ball)
-	{
-	    if((ball.cx - ball.radius) === (paddle1.cx + paddle1.paddleWidth)){
-	        if (ball.cy <= (paddle1.cy + (paddle1.paddleHeight * 0.2)) && (ball.cy + ball.radius) >= paddle1.cy)
-	            return true;
-	    }
-
-	    if((ball.cx + ball.radius) === paddle2.cx){
-	        if (ball.cy <= (paddle2.cy + (paddle2.paddleHeight * 0.2)) && (ball.cy + ball.radius) >= paddle2.cy)
-	            return true;
-	    }
-	   
-	    return false;
-	}
-
-	function touchingMiddleUp(ball)
-	{
-	    if((ball.cx - ball.radius) === (paddle1.cx + paddle1.paddleWidth)){
-	        if (ball.cy <= (paddle1.cy + (paddle1.paddleHeight * 0.4)) && ball.cy > (paddle1.cy + (paddle1.paddleHeight * 0.2)))
-	            return true;
-	    }
-
-	    if((ball.cx + ball.radius) === paddle2.cx){
-	        if (ball.cy <= (paddle2.cy + (paddle2.paddleHeight * 0.4)) && ball.cy > (paddle2.cy + (paddle2.paddleHeight * 0.2)))
-	            return true;
-	    }
-	   
-	    return false;
-	}
-
-
-	function touchingCenter(ball)
-	{
-	    if((ball.cx - ball.radius) === (paddle1.cx + paddle1.paddleWidth)){
-	        if (ball.cy <= (paddle1.cy + (paddle1.paddleHeight * 0.6)) && ball.cy > (paddle1.cy + (paddle1.paddleHeight * 0.4)))
-	            return true;
-	    }
-
-	    if((ball.cx + ball.radius) === paddle2.cx){
-	        if (ball.cy <= (paddle2.cy + (paddle2.paddleHeight * 0.6)) && ball.cy > (paddle2.cy + (paddle2.paddleHeight * 0.4)))
-	            return true;
-	    }
-	   
-	    return false;
-	}
-
-	function touchingMiddleDown(ball)
-	{
-	    if((ball.cx - ball.radius) === (paddle1.cx + paddle1.paddleWidth)){
-	        if (ball.cy <= (paddle1.cy + (paddle1.paddleHeight * 0.8)) && ball.cy > (paddle1.cy + (paddle1.paddleHeight * 0.6)))
-	            return true;
-	    }
-
-	    if((ball.cx + ball.radius) === paddle2.cx){
-	        if (ball.cy <= (paddle2.cy + (paddle2.paddleHeight * 0.8)) && ball.cy > (paddle2.cy + (paddle2.paddleHeight * 0.6)))
-	            return true;
-	    }
-	   
-	    return false;
-	}
-
-
-	function touchingBottom(ball)
-	{
-	    if((ball.cx - ball.radius) === (paddle1.cx + paddle1.paddleWidth)){
-	        if ((ball.cy - ball.radius) <= (paddle1.cy + paddle1.paddleHeight) && ball.cy > (paddle1.cy + (paddle1.paddleHeight * 0.8)))
-	            return true;
-	    }
-
-	    if((ball.cx + ball.radius) === paddle2.cx){
-	        if ((ball.cy - ball.radius) <= (paddle2.cy + paddle2.paddleHeight) && ball.cy > (paddle2.cy + (paddle2.paddleHeight * 0.8)))
-	            return true;
-	    }
-	   
-	    return false;
-	}
 
 
 	function updatePaddles(playerNumber, accValue)
@@ -364,43 +250,23 @@ window.onload = function(){
 
 		if (accValue >= 1.5 && playerNumber === 2) // up player2
 	    {
-	        if(paddle2.cy - paddle2.radius>= 0)
+	       
 	            movePaddleUp(paddle2, paddleSpeed);
 	    }
 	    if (accValue < -1.5 && playerNumber === 2) // down player2
 	    {
-	        if(paddle2.cy + paddle2.paddleHeight + paddle2.radius<= canvas.height)
 	            movePaddleDown(paddle2, paddleSpeed);
 	    }
 	    if (accValue >= 1.5 && playerNumber === 1) // up player1
 	    {
-	        if(paddle1.cy - paddle1.radius>= 0)
 	            movePaddleUp(paddle1, paddleSpeed);
 	    }
 	    if (accValue < -1.5 && playerNumber === 1) // down player1
 	    {
-	        if(paddle1.cy + paddle2.paddleHeight + paddle2.radius<= canvas.height)
 	            movePaddleDown(paddle1, paddleSpeed);
 	    }
 	}
 
-	function bounceEdge(ball)
-	{
-	    ball.xSpeed = -ball.xSpeed;
-	    ball.ySpeed = -1.3*ball.ySpeed;
-	}
-
-	function bounceCenter(ball)
-	{
-	    ball.xSpeed = -ball.xSpeed;
-	}
-
-	function bounceMiddle(ball)
-	{
-	    ball.xSpeed = -ball.xSpeed;
-	    ball.ySpeed = ball.ySpeed * 0.7;
-	}
-
 	run();
 
-}
+};
